@@ -118,23 +118,33 @@ class InputRouter:
 
     @staticmethod
     def _find_mscore() -> list[str] | None:
-        """Return the command prefix for the best available MuseScore, or None."""
+        """Return the command prefix for the best available MuseScore, or None.
+
+        Prefers MuseScore 4 (handles newer .mscz files) over MuseScore 3.
+        Checks Flatpak before falling back to mscore3.
+        """
         import subprocess
 
-        # Prefer MuseScore 4 (supports newer .mscz files)
-        for name in ("mscore4", "musescore4", "mscore", "musescore", "mscore3", "musescore3"):
+        # MuseScore 4 native binaries first
+        for name in ("mscore4", "musescore4"):
             found = shutil.which(name)
             if found:
                 return [found]
 
-        # Try MuseScore 4 via Flatpak
+        # MuseScore 4 via Flatpak (installed by user as Flatpak)
         flatpak = shutil.which("flatpak")
         if flatpak:
             check = subprocess.run(
-                [flatpak, "info", "org.musescore.MuseScore"],
-                capture_output=True,
+                [flatpak, "list", "--app", "--columns=application"],
+                capture_output=True, text=True,
             )
-            if check.returncode == 0:
-                return [flatpak, "run", "org.musescore.MuseScore"]
+            if "org.musescore.MuseScore" in (check.stdout or ""):
+                return [flatpak, "run", "--", "org.musescore.MuseScore"]
+
+        # MuseScore 3 fallback (cannot open MuseScore 4 files)
+        for name in ("mscore", "musescore", "mscore3", "musescore3"):
+            found = shutil.which(name)
+            if found:
+                return [found]
 
         return None
