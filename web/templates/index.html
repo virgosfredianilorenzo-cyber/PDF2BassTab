@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF2BassTab</title>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <h1>PDF2BassTab</h1>
+  <p>Convertissez une partition en tablature basse PDF.</p>
+
+  <form hx-post="/upload"
+        hx-encoding="multipart/form-data"
+        hx-target="#result"
+        hx-swap="innerHTML">
+
+    <div id="drop-zone">
+      <input type="file" name="file" id="file-input" accept=".pdf,.mid,.midi,.musicxml,.xml,.mxl,.mscz" required>
+      <label for="file-input">Glissez un fichier ici ou cliquez pour choisir<br>
+        <small>PDF · MIDI · MusicXML · MXL · MSCZ</small>
+      </label>
+    </div>
+
+    <fieldset>
+      <legend>Cordes</legend>
+      <label><input type="radio" name="strings" value="0" checked> Auto</label>
+      <label><input type="radio" name="strings" value="4"> 4 cordes</label>
+      <label><input type="radio" name="strings" value="5"> 5 cordes</label>
+    </fieldset>
+
+    <label>
+      <input type="checkbox" name="export_musescore" value="true" checked>
+      Export MuseScore (.mscz ou .musicxml)
+    </label>
+
+    <button type="submit">Convertir</button>
+  </form>
+
+  <div id="result"></div>
+</body>
+</html>

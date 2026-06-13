@@ -1,0 +1,11 @@
+body { font-family: sans-serif; max-width: 600px; margin: 2rem auto; padding: 0 1rem; }
+h1 { font-size: 1.8rem; }
+#drop-zone { border: 2px dashed #aaa; border-radius: 8px; padding: 2rem; text-align: center; margin-bottom: 1rem; }
+#drop-zone label { cursor: pointer; display: block; }
+#drop-zone input[type="file"] { display: none; }
+fieldset { border: none; margin: 1rem 0; padding: 0; }
+fieldset label { margin-right: 1rem; }
+button { margin-top: 1rem; padding: 0.6rem 1.4rem; font-size: 1rem; cursor: pointer; }
+#result { margin-top: 2rem; }
+#result ul { padding-left: 1.2rem; }
+#result a { color: #0066cc; }

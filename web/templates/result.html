@@ -1,0 +1,42 @@
+{% set status = job.status.value %}
+
+<div id="result"
+  {% if status in ('pending', 'running') %}
+    hx-get="/status/{{ job.job_id }}"
+    hx-trigger="every 2s"
+    hx-swap="outerHTML"
+  {% endif %}
+>
+
+{% if status == 'pending' or status == 'running' %}
+  <p>⏳ Traitement en cours…</p>
+
+{% elif status == 'awaiting_part' %}
+  <p>⚠ Plusieurs parties basse détectées. Choisissez :</p>
+  <form hx-post="/select-part/{{ job.job_id }}"
+        hx-target="#result"
+        hx-swap="outerHTML">
+    <select name="part_name">
+      {% for name in job.part_candidates %}
+        <option value="{{ name }}">{{ name }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Confirmer</button>
+  </form>
+
+{% elif status == 'done' %}
+  <p>✅ Conversion terminée !</p>
+  <ul>
+    {% if job.pdf_path %}
+      <li><a href="/download/{{ job.job_id }}/tab.pdf">📄 Télécharger la tablature PDF</a></li>
+    {% endif %}
+    {% if job.score_path %}
+      <li><a href="/download/{{ job.job_id }}/score">🎼 Télécharger le fichier éditable</a></li>
+    {% endif %}
+  </ul>
+
+{% elif status == 'error' %}
+  <p>❌ Erreur : {{ job.error }}</p>
+
+{% endif %}
+</div>
