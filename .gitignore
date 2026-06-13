@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.env
+tmp/
+tools/audiveris*.jar
+*.pdf
+!Exemples/*.pdf
+*.mscz
+!Exemples/*.mscz
+.venv/
+dist/
+*.egg-info/
