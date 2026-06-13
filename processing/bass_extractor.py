@@ -39,7 +39,7 @@ class BassExtractor:
 
         candidates = []
         for part in score.parts:
-            name = (part.partName or part.id or "").lower()
+            name = str(part.partName or part.id or "").lower()
             if any(kw in name for kw in BASS_KEYWORDS):
                 candidates.append(part)
 

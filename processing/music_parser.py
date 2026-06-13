@@ -10,6 +10,6 @@ class MusicParser:
         """Return part names (or IDs if names are absent)."""
         names = []
         for part in score.parts:
-            name = part.partName or part.id or f"Part {len(names)+1}"
+            name = str(part.partName or part.id or f"Part {len(names)+1}")
             names.append(name)
         return names
