@@ -90,27 +90,51 @@ class InputRouter:
         import os
         import subprocess
 
-        mscore = (
-            shutil.which("mscore")
-            or shutil.which("musescore")
-            or shutil.which("mscore3")
-            or shutil.which("musescore3")
-        )
-        if not mscore:
+        mscore_cmd = self._find_mscore()
+        if not mscore_cmd:
             raise UnsupportedFormatError(
-                ".mscz requires MuseScore CLI. Install MuseScore and ensure "
-                "'mscore' or 'musescore' is in PATH."
+                "Conversion .mscz impossible : MuseScore n'est pas installé. "
+                "Installez MuseScore 4 (flatpak install flathub org.musescore.MuseScore) "
+                "ou exportez votre fichier en MusicXML depuis MuseScore avant d'uploader."
             )
         dest = (self.tmp_dir / (src.stem + ".musicxml")).resolve()
         env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
-        result = subprocess.run(
-            [mscore, "-o", str(dest), str(src.resolve())],
-            capture_output=True,
-            env=env,
-        )
+        cmd = mscore_cmd + ["-o", str(dest), str(src.resolve())]
+        result = subprocess.run(cmd, capture_output=True, env=env)
         if result.returncode != 0:
+            stderr = result.stderr.decode(errors="replace")
+            # Detect version incompatibility (file saved with newer MuseScore)
+            if "version" in stderr.lower() and ("récente" in stderr or "newer" in stderr.lower()):
+                raise UnsupportedFormatError(
+                    "Ce fichier .mscz a été créé avec MuseScore 4 mais votre système "
+                    "n'a que MuseScore 3. Solutions :\n"
+                    "• Installez MuseScore 4 : flatpak install flathub org.musescore.MuseScore\n"
+                    "• Ou ouvrez le fichier dans MuseScore 4 et exportez-le en MusicXML (.musicxml)"
+                )
             raise UnsupportedFormatError(
-                f"MuseScore conversion failed (exit {result.returncode}):\n"
-                + result.stderr.decode(errors="replace")
+                f"Échec conversion MuseScore (code {result.returncode}) :\n{stderr}"
             )
         return dest
+
+    @staticmethod
+    def _find_mscore() -> list[str] | None:
+        """Return the command prefix for the best available MuseScore, or None."""
+        import subprocess
+
+        # Prefer MuseScore 4 (supports newer .mscz files)
+        for name in ("mscore4", "musescore4", "mscore", "musescore", "mscore3", "musescore3"):
+            found = shutil.which(name)
+            if found:
+                return [found]
+
+        # Try MuseScore 4 via Flatpak
+        flatpak = shutil.which("flatpak")
+        if flatpak:
+            check = subprocess.run(
+                [flatpak, "info", "org.musescore.MuseScore"],
+                capture_output=True,
+            )
+            if check.returncode == 0:
+                return [flatpak, "run", "org.musescore.MuseScore"]
+
+        return None
