@@ -59,7 +59,7 @@ lilypond --version
 Retournez dans le dossier du projet :
 
 ```bash
-cd ~/Documents/PDF2BassTab
+cd -   # retour au dossier précédent
 ```
 
 ---
@@ -97,10 +97,12 @@ sudo apt-get install -f
 Vérification :
 
 ```bash
-audiveris --version
+ls /opt/audiveris/bin/Audiveris
 ```
 
-> **Résultat attendu :** `Audiveris version 5.10.2`
+> **Résultat attendu :** `/opt/audiveris/bin/Audiveris`  
+> L'application détecte automatiquement ce chemin — aucune configuration supplémentaire n'est nécessaire.  
+> Le binaire n'est pas dans le PATH système, ce qui est normal.
 
 ---
 
@@ -130,7 +132,7 @@ flatpak install flathub org.musescore.MuseScore
 ### Étape 7 — Lancer l'application
 
 ```bash
-cd ~/Documents/PDF2BassTab
+cd /chemin/vers/PDF2BassTab   # remplacez par votre chemin réel
 source .venv/bin/activate
 uvicorn api.main:app --reload --port 8000
 ```
