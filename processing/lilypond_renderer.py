@@ -99,6 +99,7 @@ bassMusic = {{
       \\override NoteHead.stencil = #note-head::brew-ez-stencil
       \\override NoteHead.font-family = #'sans
       \\override NoteHead.font-series = #'bold
+      \\override StringNumber.stencil = ##f
       \\bassMusic
     }}
     \\new TabStaff {{
