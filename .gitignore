@@ -4,9 +4,11 @@ __pycache__/
 tmp/
 tools/audiveris*.jar
 *.pdf
-!Exemples/*.pdf
 *.mscz
-!Exemples/*.mscz
+*.mid
+*.musicxml
+*.mxl
+Exemples/
 .venv/
 dist/
 *.egg-info/
