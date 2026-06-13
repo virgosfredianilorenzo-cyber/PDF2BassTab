@@ -21,7 +21,8 @@ class InputRouter:
 
         if suffix in (".musicxml", ".xml"):
             dest = self.tmp_dir / src.name
-            shutil.copy2(src, dest)
+            if src.resolve() != dest.resolve():
+                shutil.copy2(src, dest)
             return dest
 
         if suffix == ".mxl":
@@ -86,14 +87,13 @@ class InputRouter:
 
     def _convert_mscz(self, src: Path) -> Path:
         """Convert .mscz to MusicXML via MuseScore CLI."""
-        import shutil as _shutil
         import subprocess
 
         mscore = (
-            _shutil.which("mscore")
-            or _shutil.which("musescore")
-            or _shutil.which("mscore3")
-            or _shutil.which("musescore3")
+            shutil.which("mscore")
+            or shutil.which("musescore")
+            or shutil.which("mscore3")
+            or shutil.which("musescore3")
         )
         if not mscore:
             raise UnsupportedFormatError(
