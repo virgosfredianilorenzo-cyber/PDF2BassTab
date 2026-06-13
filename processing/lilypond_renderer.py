@@ -84,6 +84,7 @@ class LilyPondRenderer:
         return f"""\\version "2.24.0"
 \\paper {{
   #(set-paper-size "a4")
+  ragged-last-bottom = ##f
 }}
 \\header {{
   title = "{escaped_title}"
@@ -99,6 +100,7 @@ bassMusic = {{
       \\override NoteHead.stencil = #note-head::brew-ez-stencil
       \\override NoteHead.font-family = #'sans
       \\override NoteHead.font-series = #'bold
+      \\override NoteHead.font-size = #-1
       \\override StringNumber.stencil = ##f
       \\bassMusic
     }}
@@ -107,7 +109,14 @@ bassMusic = {{
       \\bassMusic
     }}
   >>
-  \\layout {{}}
+  \\layout {{
+    indent = 0\\mm
+    \\context {{
+      \\Score
+      \\override SpacingSpanner.base-shortest-duration =
+        #(ly:make-moment 1/8)
+    }}
+  }}
 }}
 """
 
