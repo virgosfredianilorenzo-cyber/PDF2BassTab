@@ -58,17 +58,17 @@ class LilyPondRenderer:
         return self.num_strings - string_idx
 
     def _note_to_lily(self, note: AssignedNote, prev_duration: str | None) -> str:
+        bar = "| " if note.bar_start else ""
         if note.is_rest:
             dur = ql_to_lily_duration(note.quarter_length)
-            return f"r{dur}"
+            return f"{bar}r{dur}"
         pitch = midi_to_lily_pitch(note.midi)
         dur = ql_to_lily_duration(note.quarter_length)
-        # Omit duration if same as previous (LilyPond convention)
         dur_str = dur if dur != prev_duration else ""
         string_mark = f"\\{self._lily_string_num(note.string_idx)}"
         tie = "~" if note.tied else ""
         out_of_range = "^\\markup { \\small \"?\" }" if note.fret < 0 else ""
-        return f"{pitch}{dur_str}{string_mark}{tie}{out_of_range}"
+        return f"{bar}{pitch}{dur_str}{string_mark}{tie}{out_of_range}"
 
     def generate_ly(self, notes: list[AssignedNote], title: str = "") -> str:
         tokens = []
@@ -78,7 +78,7 @@ class LilyPondRenderer:
             if not note.is_rest:
                 prev_dur = ql_to_lily_duration(note.quarter_length)
 
-        music_body = " ".join(tokens)
+        music_body = "\n  ".join(tokens)
         escaped_title = title.replace('"', '\\"')
 
         return f"""\\version "2.24.0"
@@ -111,11 +111,6 @@ bassMusic = {{
   >>
   \\layout {{
     indent = 0\\mm
-    \\context {{
-      \\Score
-      \\override SpacingSpanner.base-shortest-duration =
-        #(ly:make-moment 1/8)
-    }}
   }}
 }}
 """

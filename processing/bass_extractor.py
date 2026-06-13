@@ -64,9 +64,75 @@ class BassExtractor:
         return any(isinstance(c, music21.clef.TabClef) for c in clefs)
 
     def _part_to_notes(self, part: music21.stream.Part) -> list[BassNote]:
+        """Extract notes measure by measure, preserving barline positions.
+
+        Iterating over Measure objects (rather than a flat list) ensures that
+        note durations are normalised to each measure's actual length. This
+        prevents LilyPond from receiving durations that don't sum to whole
+        measures, which would break automatic line-breaking.
+        """
         notes: list[BassNote] = []
-        flat = part.flatten().notesAndRests
-        elements = list(flat)
+        measures = list(part.getElementsByClass(music21.stream.Measure))
+
+        if not measures:
+            # Fallback for parts without explicit measures
+            return self._flat_to_notes(part.flatten().notesAndRests)
+
+        for measure in measures:
+            measure_notes: list[BassNote] = []
+            for el in measure.flatten().notesAndRests:
+                tied = (
+                    isinstance(el, music21.note.Note)
+                    and el.tie is not None
+                    and el.tie.type in ("start", "continue")
+                )
+                if isinstance(el, music21.note.Rest):
+                    measure_notes.append(BassNote(
+                        midi=0,
+                        quarter_length=float(el.quarterLength),
+                        is_rest=True,
+                        tied=False,
+                    ))
+                elif isinstance(el, music21.note.Note):
+                    measure_notes.append(BassNote(
+                        midi=el.pitch.midi,
+                        quarter_length=float(el.quarterLength),
+                        is_rest=False,
+                        tied=tied,
+                    ))
+                elif isinstance(el, music21.chord.Chord):
+                    lowest = min(el.pitches, key=lambda p: p.midi)
+                    measure_notes.append(BassNote(
+                        midi=lowest.midi,
+                        quarter_length=float(el.quarterLength),
+                        is_rest=False,
+                        tied=tied,
+                    ))
+
+            if not measure_notes:
+                continue
+
+            # Normalise durations so they sum exactly to the measure length,
+            # preventing accumulated rounding errors from misaligning barlines.
+            expected = float(measure.quarterLength)
+            actual = sum(n.quarter_length for n in measure_notes)
+            if actual > 0 and abs(actual - expected) > 1e-6:
+                # Distribute the rounding error onto the last note
+                measure_notes[-1] = BassNote(
+                    midi=measure_notes[-1].midi,
+                    quarter_length=measure_notes[-1].quarter_length + (expected - actual),
+                    is_rest=measure_notes[-1].is_rest,
+                    tied=measure_notes[-1].tied,
+                )
+
+            measure_notes[0].bar_start = True
+            notes.extend(measure_notes)
+
+        return notes
+
+    def _flat_to_notes(self, elements) -> list[BassNote]:
+        """Legacy flat extraction used when no Measure objects are present."""
+        notes = []
         for el in elements:
             tied = (
                 isinstance(el, music21.note.Note)
@@ -74,26 +140,15 @@ class BassExtractor:
                 and el.tie.type in ("start", "continue")
             )
             if isinstance(el, music21.note.Rest):
-                notes.append(BassNote(
-                    midi=0,
-                    quarter_length=float(el.quarterLength),
-                    is_rest=True,
-                    tied=False,
-                ))
+                notes.append(BassNote(midi=0, quarter_length=float(el.quarterLength),
+                                      is_rest=True, tied=False))
             elif isinstance(el, music21.note.Note):
-                notes.append(BassNote(
-                    midi=el.pitch.midi,
-                    quarter_length=float(el.quarterLength),
-                    is_rest=False,
-                    tied=tied,
-                ))
+                notes.append(BassNote(midi=el.pitch.midi,
+                                      quarter_length=float(el.quarterLength),
+                                      is_rest=False, tied=tied))
             elif isinstance(el, music21.chord.Chord):
-                # For chords, take the lowest note
                 lowest = min(el.pitches, key=lambda p: p.midi)
-                notes.append(BassNote(
-                    midi=lowest.midi,
-                    quarter_length=float(el.quarterLength),
-                    is_rest=False,
-                    tied=tied,
-                ))
+                notes.append(BassNote(midi=lowest.midi,
+                                      quarter_length=float(el.quarterLength),
+                                      is_rest=False, tied=tied))
         return notes

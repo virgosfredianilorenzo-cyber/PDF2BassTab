@@ -7,6 +7,7 @@ class BassNote:
     quarter_length: float
     is_rest: bool
     tied: bool = False
+    bar_start: bool = False  # True for the first note/rest of each measure
 
 
 @dataclass
