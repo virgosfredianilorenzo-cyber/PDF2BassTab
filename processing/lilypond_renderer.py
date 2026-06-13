@@ -95,7 +95,12 @@ bassMusic = {{
 }}
 \\score {{
   <<
-    \\new Staff {{ \\bassMusic }}
+    \\new Staff {{
+      \\override NoteHead.stencil = #note-head::brew-ez-stencil
+      \\override NoteHead.font-family = #'sans
+      \\override NoteHead.font-series = #'bold
+      \\bassMusic
+    }}
     \\new TabStaff {{
       {self.tuning_cmd}
       \\bassMusic
