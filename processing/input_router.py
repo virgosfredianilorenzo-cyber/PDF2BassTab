@@ -87,6 +87,7 @@ class InputRouter:
 
     def _convert_mscz(self, src: Path) -> Path:
         """Convert .mscz to MusicXML via MuseScore CLI."""
+        import os
         import subprocess
 
         mscore = (
@@ -100,10 +101,16 @@ class InputRouter:
                 ".mscz requires MuseScore CLI. Install MuseScore and ensure "
                 "'mscore' or 'musescore' is in PATH."
             )
-        dest = self.tmp_dir / (src.stem + ".musicxml")
-        subprocess.run(
-            [mscore, "-o", str(dest), str(src)],
-            check=True,
+        dest = (self.tmp_dir / (src.stem + ".musicxml")).resolve()
+        env = {**os.environ, "QT_QPA_PLATFORM": "offscreen"}
+        result = subprocess.run(
+            [mscore, "-o", str(dest), str(src.resolve())],
             capture_output=True,
+            env=env,
         )
+        if result.returncode != 0:
+            raise UnsupportedFormatError(
+                f"MuseScore conversion failed (exit {result.returncode}):\n"
+                + result.stderr.decode(errors="replace")
+            )
         return dest

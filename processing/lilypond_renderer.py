@@ -1,6 +1,20 @@
+import shutil
 import subprocess
 from pathlib import Path
 from processing.models import AssignedNote
+
+
+def _find_lilypond() -> str:
+    """Locate the lilypond binary, checking ~/.local/bin first."""
+    local_bin = Path.home() / ".local" / "bin" / "lilypond"
+    if local_bin.exists():
+        return str(local_bin)
+    found = shutil.which("lilypond")
+    if found:
+        return found
+    raise RuntimeError(
+        "LilyPond not found. Install it or place the binary at ~/.local/bin/lilypond"
+    )
 
 NOTE_NAMES = ['c', 'cis', 'd', 'dis', 'e', 'f', 'fis', 'g', 'gis', 'a', 'ais', 'b']
 
@@ -94,17 +108,19 @@ bassMusic = {{
     def render(self, notes: list[AssignedNote], title: str = "Bass Tab") -> Path:
         """Generate .ly file and render to PDF. Returns PDF path."""
         ly_content = self.generate_ly(notes, title)
-        ly_path = self.tmp_dir / "output.ly"
+        tmp_abs = self.tmp_dir.resolve()
+        ly_path = tmp_abs / "output.ly"
         ly_path.write_text(ly_content, encoding="utf-8")
 
+        lilypond_bin = _find_lilypond()
         result = subprocess.run(
-            ["lilypond", "--pdf", "-o", str(self.tmp_dir / "output"), str(ly_path)],
-            capture_output=True, text=True, cwd=str(self.tmp_dir)
+            [lilypond_bin, "--pdf", "-o", str(tmp_abs / "output"), str(ly_path)],
+            capture_output=True, text=True,
         )
         if result.returncode != 0:
             raise RuntimeError(f"LilyPond error:\n{result.stderr}")
 
-        pdf_path = self.tmp_dir / "output.pdf"
+        pdf_path = tmp_abs / "output.pdf"
         if not pdf_path.exists():
             raise RuntimeError("LilyPond ran but produced no PDF")
         return pdf_path
