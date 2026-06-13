@@ -22,7 +22,7 @@ sudo apt install default-jre
 ## Lancer l'application
 
 ```bash
-python3 -m uvicorn api.main:app --reload --port 8000
+python -m uvicorn api.main:app --reload --port 8000
 ```
 
 Ouvrir http://localhost:8000
@@ -30,8 +30,8 @@ Ouvrir http://localhost:8000
 ## Tests
 
 ```bash
-pytest                          # tests rapides
-pytest -m slow                  # tests complets (LilyPond, OMR)
+python -m pytest                          # tests rapides
+python -m pytest -m slow                  # tests complets (LilyPond, OMR)
 ```
 
 ## Formats supportés
