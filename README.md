@@ -5,7 +5,9 @@ Convertit des partitions (PDF, MIDI, MusicXML, MSCZ) en tablatures basse 4 ou 5 
 ## Prérequis
 
 ```bash
-# Python 3.11+
+# Python 3.11+ — créer un environnement virtuel
+python3 -m venv .venv
+source .venv/bin/activate  # Linux/macOS
 pip install -r requirements.txt
 
 # LilyPond
@@ -22,7 +24,8 @@ sudo apt install default-jre
 ## Lancer l'application
 
 ```bash
-python -m uvicorn api.main:app --reload --port 8000
+source .venv/bin/activate
+uvicorn api.main:app --reload --port 8000
 ```
 
 Ouvrir http://localhost:8000
@@ -30,8 +33,9 @@ Ouvrir http://localhost:8000
 ## Tests
 
 ```bash
-python -m pytest                          # tests rapides
-python -m pytest -m slow                  # tests complets (LilyPond, OMR)
+source .venv/bin/activate
+pytest                          # tests rapides
+pytest -m slow                  # tests complets (LilyPond, OMR)
 ```
 
 ## Formats supportés
