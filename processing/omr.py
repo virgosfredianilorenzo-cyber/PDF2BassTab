@@ -16,8 +16,16 @@ _FALLBACK_JAVA_PATHS = [
     "/run/host/usr/lib/jvm/java-21-openjdk-amd64/bin/java",
 ]
 
-# JAR locations checked when the `audiveris` command is not in PATH
+# Wrapper scripts installed by the .deb package
+_WRAPPER_PATHS = [
+    Path("/opt/audiveris/bin/Audiveris"),  # .deb installs here (capital A)
+    Path("/usr/bin/audiveris"),
+    Path("/usr/local/bin/audiveris"),
+]
+
+# JAR locations (used only if no wrapper script is found)
 _JAR_SEARCH_PATHS = [
+    Path("/opt/audiveris/lib/app/audiveris.jar"),   # .deb layout
     Path("/usr/share/audiveris/lib/Audiveris.jar"),
     Path("/opt/audiveris/lib/Audiveris.jar"),
 ]
@@ -31,14 +39,21 @@ def _find_audiveris_cmd(tools_dir: Path) -> list[str]:
     """Return a command list to invoke Audiveris CLI.
 
     Search order:
-    1. `audiveris` in PATH (installed via .deb)
-    2. Known system JAR locations
-    3. tools/ directory (manual JAR placement)
+    1. Known wrapper script paths (e.g. /opt/audiveris/bin/Audiveris from .deb)
+    2. `audiveris` / `Audiveris` in PATH
+    3. Known system JAR locations
+    4. tools/ directory (manual JAR placement)
     """
-    # 1. Command in PATH
-    found = shutil.which("audiveris")
-    if found:
-        return [found]
+    # 1. Known wrapper script locations
+    for wrapper in _WRAPPER_PATHS:
+        if wrapper.exists():
+            return [str(wrapper)]
+
+    # 2. Command in PATH (case-insensitive search)
+    for name in ("audiveris", "Audiveris"):
+        found = shutil.which(name)
+        if found:
+            return [found]
 
     java = shutil.which("java")
     if not java:
@@ -51,7 +66,7 @@ def _find_audiveris_cmd(tools_dir: Path) -> list[str]:
             "Java introuvable. Installez Java 17+ :\n  sudo apt install default-jre"
         )
 
-    # 2. Known system paths
+    # 3. Known system JAR paths
     for jar in _JAR_SEARCH_PATHS:
         if jar.exists():
             return [java, "-jar", str(jar)]
