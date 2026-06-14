@@ -1,0 +1,10 @@
+services:
+  pdf2basstab:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./tmp:/app/tmp       # persist job files across restarts
+    environment:
+      - DISPLAY=:99          # needed by MuseScore headless via xvfb
+    restart: unless-stopped
