@@ -133,7 +133,7 @@ La position main est une heuristique permettant de comparer des positions sur de
 ### Options utilisateur
 
 - **Cordes** : Auto (défaut) / 4 / 5
-- **Export MuseScore** : checkbox (activé par défaut)
+- **Export MuseScore** : checkbox (activé par défaut) — si MuseScore CLI absent, fallback vers MusicXML téléchargeable
 
 ### Gestion de la sélection de partie
 
@@ -149,6 +149,7 @@ Si la partition contient plusieurs parties basse candidates, `/status/{job_id}` 
 | **Java 17+** | Runtime Audiveris | `apt install default-jre` |
 | **LilyPond** | Rendu tablature PDF | `apt install lilypond` |
 | **music21** | Parse/traitement MusicXML & MIDI | `pip install music21` |
+| **MuseScore CLI** (optionnel) | Conversion MusicXML → .mscz | AppImage ou `apt install musescore3` |
 | **FastAPI + uvicorn** | Serveur web | `pip install fastapi uvicorn` |
 | **python-multipart** | Upload fichiers | `pip install python-multipart` |
 | **Jinja2** | Templates HTML | inclus avec FastAPI |

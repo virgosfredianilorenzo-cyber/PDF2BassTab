@@ -23,8 +23,24 @@ DURATION_MAP = {
     0.75: "8.", 0.5: "8", 0.375: "16.", 0.25: "16", 0.125: "32",
 }
 
-TUNING_4 = "\\set TabStaff.stringTunings = #bass-tuning"
-TUNING_5 = "\\set TabStaff.stringTunings = #bass-five-string-tuning"
+# Custom tunings matching fret_assigner.py TUNING_4/5 (E2 A2 D3 G3 = MIDI 40 45 50 55).
+# LilyPond's built-in #bass-tuning uses E1/A1/D2/G2 (MIDI 28/33/38/43) — one octave lower —
+# which causes every fret number to appear 12 positions too high.
+TUNING_4 = (
+    "\\set TabStaff.stringTunings = "
+    "#`(,(ly:make-pitch -1 4 0)"   # G3 = MIDI 55
+    " ,(ly:make-pitch -1 1 0)"     # D3 = MIDI 50
+    " ,(ly:make-pitch -2 5 0)"     # A2 = MIDI 45
+    " ,(ly:make-pitch -2 2 0))"    # E2 = MIDI 40
+)
+TUNING_5 = (
+    "\\set TabStaff.stringTunings = "
+    "#`(,(ly:make-pitch -1 4 0)"   # G3 = MIDI 55
+    " ,(ly:make-pitch -1 1 0)"     # D3 = MIDI 50
+    " ,(ly:make-pitch -2 5 0)"     # A2 = MIDI 45
+    " ,(ly:make-pitch -2 2 0)"     # E2 = MIDI 40
+    " ,(ly:make-pitch -3 6 0))"    # B1 = MIDI 35
+)
 
 
 def midi_to_lily_pitch(midi: int) -> str:
@@ -57,8 +73,8 @@ class LilyPondRenderer:
         """Convert our 0-based (lowest) idx to LilyPond 1-based (highest=1)."""
         return self.num_strings - string_idx
 
-    def _note_to_lily(self, note: AssignedNote, prev_duration: str | None) -> str:
-        bar = "| " if note.bar_start else ""
+    def _note_to_lily(self, note: AssignedNote, prev_duration: str | None, skip_bar: bool = False) -> str:
+        bar = "" if skip_bar else ("| " if note.bar_start else "")
         if note.is_rest:
             dur = ql_to_lily_duration(note.quarter_length)
             return f"{bar}r{dur}"
@@ -73,8 +89,10 @@ class LilyPondRenderer:
     def generate_ly(self, notes: list[AssignedNote], title: str = "") -> str:
         tokens = []
         prev_dur = None
+        first = True
         for note in notes:
-            tokens.append(self._note_to_lily(note, prev_dur))
+            tokens.append(self._note_to_lily(note, prev_dur, skip_bar=first))
+            first = False
             if not note.is_rest:
                 prev_dur = ql_to_lily_duration(note.quarter_length)
 
@@ -85,11 +103,33 @@ class LilyPondRenderer:
 \\paper {{
   #(set-paper-size "a4")
   ragged-last-bottom = ##f
+  ragged-last = ##f
 }}
 \\header {{
   title = "{escaped_title}"
   tagline = ##f
 }}
+% Custom note-head stencil: open circle (white fill) with English note letter.
+% Uses grob-interpret-markup so the text font is resolved correctly in the grob
+% context (interpret-markup alone omits font props → nan extents → crash).
+#(define (open-circle-note-head grob)
+  (let* ((event  (ly:grob-property grob 'cause))
+         (pitch  (ly:event-property event 'pitch))
+         (idx    (ly:pitch-notename pitch))
+         (names  #("C" "D" "E" "F" "G" "A" "B"))
+         (letter (vector-ref names idx))
+         (m      (markup #:bold #:fontsize -1 letter))
+         (stil   (grob-interpret-markup grob m))
+         (x-ext  (ly:stencil-extent stil X))
+         (y-ext  (ly:stencil-extent stil Y))
+         (r      (+ (max (/ (- (cdr x-ext) (car x-ext)) 2)
+                         (/ (- (cdr y-ext) (car y-ext)) 2))
+                    0.3))
+         (circ   (make-circle-stencil r 0.1 #f))
+         (cx     (/ (+ (car x-ext) (cdr x-ext)) 2))
+         (cy     (/ (+ (car y-ext) (cdr y-ext)) 2)))
+    (ly:stencil-add circ
+                    (ly:stencil-translate stil (cons (- cx) (- cy))))))
 bassMusic = {{
   \\clef bass
   {music_body}
@@ -97,10 +137,7 @@ bassMusic = {{
 \\score {{
   <<
     \\new Staff {{
-      \\override NoteHead.stencil = #note-head::brew-ez-stencil
-      \\override NoteHead.font-family = #'sans
-      \\override NoteHead.font-series = #'bold
-      \\override NoteHead.font-size = #-1
+      \\override NoteHead.stencil = #open-circle-note-head
       \\override StringNumber.stencil = ##f
       \\bassMusic
     }}
@@ -111,6 +148,7 @@ bassMusic = {{
   >>
   \\layout {{
     indent = 0\\mm
+    short-indent = 0\\mm
   }}
 }}
 """
